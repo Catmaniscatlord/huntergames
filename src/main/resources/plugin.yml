@@ -1,0 +1,7 @@
+name: HunterGames
+main: io.github.catmaniscatlord.HunterGames.HunterGames
+version: ${version}
+api-version: 1.13 
+commands:
+  start:
+    description: starts the game
