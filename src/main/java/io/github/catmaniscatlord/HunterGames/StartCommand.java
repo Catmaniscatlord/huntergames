@@ -6,6 +6,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
+import org.bukkit.GameRule;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -113,7 +114,7 @@ public class StartCommand implements CommandExecutor{
         String generateCommand = "fcp cancel";
         Bukkit.dispatchCommand(console, generateCommand);
 
-
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
         Bukkit.getScheduler().cancelTask(countdown.getTaskId());
         hunterEvents.setCanTakeDamage(true);
         //set the world border to 200 * num of players after the countdown finishes 

@@ -19,26 +19,28 @@ public abstract class EventTimer {
         this.delay = delay;
     }
 
+    abstract boolean conditions();
+
     //inorder to access the event variable you must cast it to something else in this function
     abstract void run();
 
     abstract void delayMessage();
 
     // checks if it has been long enough for the code to run again 
+    // we negate the time delay so it is positive.
     public boolean checkDelay()
     {
-        while (true)
+        if(playerTimer.containsKey(player))
         {
-            if(playerTimer.containsKey(player))
-            {
-                return timeDelay() > delay;
-            } else
-            {
-                playerTimer.put(player, System.currentTimeMillis());
-            }
+            return  -timeDelay() > delay;
+        } else
+        {
+            playerTimer.put(player, System.currentTimeMillis());   
+            return true;
         }
     }
 
+    // always returns a number less than or equal to 0
     public long timeDelay()
     {
         return playerTimer.get(player) - System.currentTimeMillis();
@@ -48,12 +50,16 @@ public abstract class EventTimer {
     {
         this.event = event;
         this.player = event.getPlayer();
-        if(checkDelay())
+        if(conditions())
         {
-            run();
-        } else
-        {
-            delayMessage();
+            if(checkDelay())
+            {
+                run();
+                playerTimer.put(player, System.currentTimeMillis());
+            } else
+            {
+                delayMessage();
+            }
         }
     }
 
@@ -65,11 +71,19 @@ public abstract class EventTimer {
         return event;
     }
 
+    public Player getPlayer() {
+        return player;
+    }
+
     public void setDelay(int delay) {
         this.delay = delay;
     }
 
     public void setEvent(PlayerEvent event) {
         this.event = event;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
     }
 }

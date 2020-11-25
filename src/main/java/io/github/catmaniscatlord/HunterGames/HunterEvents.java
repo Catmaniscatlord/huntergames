@@ -83,52 +83,7 @@ public class HunterEvents implements Listener{
 
     @EventHandler
     public void playerInteractEvent(PlayerInteractEvent e)
-    {
-        // The EventTimer class prevents a player from triggering an action for x milliseconds 
-        EventTimer compassTimer = new EventTimer(10*1000)
-        {    
-            // This is the material that will be used
-            Material sacraficeItem = Material.IRON_INGOT;
-            
-            // We have to take variables out of the creation of this object in order to use them in our code
-            PlayerInteractEvent e = (PlayerInteractEvent) this.event;
-            Player p = this.player;
-            
-            @Override
-            public void run()
-            {
-                //I include the e.get hand part because player interact passes in both events for interact main and offhand, which triggers this twice
-                if(e.getHand() == EquipmentSlot.HAND && (p.getInventory().getItemInMainHand().getType().equals(Material.COMPASS) || p.getInventory().getItemInOffHand().getType().equals(Material.COMPASS)))
-                {
-                    // checks if the player right click with the compass, 
-                    // and if it has been at least 10 seconds since it has last been triggered
-                    if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
-                    {
-                        for(int i = 0; i < p.getInventory().getSize(); i++)
-                        {
-                            ItemStack item = p.getInventory().getItem(i);
-                            if(item != null && item.getType().equals(sacraficeItem))
-                            {
-                                int amount = item.getAmount() - 1;
-                                item.setAmount(amount);
-                                p.getInventory().setItem(i, amount > 0 ? item : null);
-                                p.updateInventory();
-                                compassTarget.updatePlayerCompass(p);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            @Override 
-            public void delayMessage()
-            {
-                String message = String.format("Please wait %.1f seconds before using that again", (float) - this.timeDelay()/1000);
-                p.sendMessage(message);
-            }
-        };
-
+    {  
         compassTimer.handleEvent(e);
     }
 
@@ -139,4 +94,60 @@ public class HunterEvents implements Listener{
     public void setCanTakeDamage(Boolean canTakeDamage) {
         this.canTakeDamage = canTakeDamage;
     }   
+
+    
+    // The EventTimer class prevents a player from triggering an action for x milliseconds 
+    private EventTimer compassTimer = new EventTimer(10*1000)
+    {    
+        // This is the material that will be used
+        Material sacraficeItem = Material.IRON_INGOT;
+        
+        @Override 
+        public boolean conditions()
+        {
+            // We have to take variables out of the creation of this object in order to use them in our code
+            PlayerInteractEvent e = (PlayerInteractEvent) getEvent();
+            Player p = getPlayer();
+
+            //I include the e.get hand part because player interact passes in both events for interact main and offhand, which triggers this twice
+            if(e.getHand() == EquipmentSlot.HAND && (p.getInventory().getItemInMainHand().getType().equals(Material.COMPASS) || p.getInventory().getItemInOffHand().getType().equals(Material.COMPASS)))
+            {
+                // checks if the player right clicked with the compass, 
+                if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void run()
+        {
+            // We have to take variables out of the creation of this object in order to use them in our code
+            Player p = getPlayer();
+            
+            for(int i = 0; i < p.getInventory().getSize(); i++)
+            {
+                ItemStack item = p.getInventory().getItem(i);
+                if(item != null && item.getType().equals(sacraficeItem))
+                {
+                    int amount = item.getAmount() - 1;
+                    item.setAmount(amount);
+                    p.getInventory().setItem(i, amount > 0 ? item : null);
+                    p.updateInventory();
+                    compassTarget.updatePlayerCompass(p);
+                    break;
+                } 
+            }
+        }
+
+        @Override 
+        public void delayMessage()
+        {
+            //since the time delay returns a negative number we add
+            String message = String.format("Please wait %.1f seconds before using that again", (float) (getDelay() + timeDelay())/1000);
+            getPlayer().sendMessage(message);
+        }
+    };
 }

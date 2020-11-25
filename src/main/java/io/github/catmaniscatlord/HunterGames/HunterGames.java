@@ -28,16 +28,11 @@ public final class HunterGames extends JavaPlugin {
         // modifies how certain events behave
         // it also updates the compassTarget every 10 minutes.
         getCommand("start").setExecutor(new StartCommand(this, compassTarget, hunterEvents));
-
-
-        //once the server closes delete all world files : this allows for easier resets.
-        Bukkit.getWorlds().forEach((w) -> w.getWorldFolder().deleteOnExit());
     }
 
     @Override
     public void onDisable()
     {
-        
     }
 
     private void setup()
@@ -48,6 +43,7 @@ public final class HunterGames extends JavaPlugin {
         WorldBorder worldBorder = world.getWorldBorder();
         
         worldBorder.setSize(10);
+        world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, false);
         world.setPVP(false);
         world.setGameRule(GameRule.SPAWN_RADIUS, 5);
     }
