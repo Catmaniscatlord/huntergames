@@ -24,7 +24,12 @@ public abstract class EventTimer {
     //inorder to access the event variable you must cast it to something else in this function
     abstract void run();
 
-    abstract void delayMessage();
+    public void delayMessage()
+    {
+        //since the time delay returns a negative number we add
+        String message = String.format("Please wait %.1f seconds before using that again", (float) (getDelay() + timeDelay())/1000);
+        getPlayer().sendMessage(message);
+    }
 
     // checks if it has been long enough for the code to run again 
     // we negate the time delay so it is positive.
@@ -32,7 +37,7 @@ public abstract class EventTimer {
     {
         if(playerTimer.containsKey(player))
         {
-            return  -timeDelay() > delay;
+            return -timeDelay() > delay;
         } else
         {
             playerTimer.put(player, System.currentTimeMillis());   
@@ -77,10 +82,6 @@ public abstract class EventTimer {
 
     public void setDelay(int delay) {
         this.delay = delay;
-    }
-
-    public void setEvent(PlayerEvent event) {
-        this.event = event;
     }
 
     public void setPlayer(Player player) {

@@ -3,106 +3,38 @@ package io.github.catmaniscatlord.HunterGames;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.entity.Player;
 
+import java.util.Random;
+
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.WorldBorder;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.ChatColor;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.util.Vector;
+
+import net.md_5.bungee.api.ChatColor;
 
 import org.bukkit.event.block.Action;
 
 public class HunterEvents implements Listener{
-
-    private CompassTarget compassTarget;
-    private Boolean canTakeDamage;
-
-    public HunterEvents(CompassTarget compassTarget)
-    {
-        this.canTakeDamage = false;
-        this.compassTarget = compassTarget;
-
-    }
-    
-    // When a player first joins set them into adventure mode and update the available players for the compass class
-    @EventHandler
-    public void playerJoin(PlayerJoinEvent e)
-    { 
-        Player p = e.getPlayer(); 
-        if(!p.hasPlayedBefore())
-        { 
-            p.getInventory().addItem(new ItemStack(Material.COMPASS));
-            p.setGameMode(GameMode.ADVENTURE);
-        }
-        compassTarget.updatePlayers();
-    }
-
-    // When a player leaves update the compass
-    @EventHandler
-    public void playerQuitEvent(PlayerQuitEvent e)
-    {
-        compassTarget.updatePlayers();
-    }
-
-    // When a player dies set them into spectator mode and shrink the world border
-    @EventHandler
-    public void playerDeathEvent(PlayerDeathEvent e)
-    {
-        Player p = e.getEntity();
-        WorldBorder worldBorder = Bukkit.getWorld("world").getWorldBorder();
-        
-        p.setGameMode(GameMode.SPECTATOR);
-        
-        
-        int worldSize=10;
-        
-        for(Player i : Bukkit.getOnlinePlayers())
-        {
-            if(i.getGameMode().equals(GameMode.SURVIVAL))
-            {
-                worldSize += 250;
-            }
-        }
-        Bukkit.broadcastMessage(ChatColor.RED + "World border shrinking to a radius of " + worldSize/2);
-        worldBorder.setSize(worldSize,20*300);
-    }
-
-    @EventHandler
-    public void entityDamageEvent(EntityDamageEvent e)
-    {
-        // if they can take damage set cancelled will be false
-        e.setCancelled(!canTakeDamage);
-    }
-
-    @EventHandler
-    public void playerInteractEvent(PlayerInteractEvent e)
-    {  
-        compassTimer.handleEvent(e);
-    }
-
-    public Boolean getCanTakeDamage() {
-        return canTakeDamage;
-    }
-    
-    public void setCanTakeDamage(Boolean canTakeDamage) {
-        this.canTakeDamage = canTakeDamage;
-    }   
-
     
     // The EventTimer class prevents a player from triggering an action for x milliseconds 
-    private EventTimer compassTimer = new EventTimer(10*1000)
-    {    
+    private EventTimer compassTimer = new CompassTimer(10*1000);
+    private final class CompassTimer extends EventTimer {
         // This is the material that will be used
         Material sacraficeItem = Material.IRON_INGOT;
         
-        @Override 
+		private CompassTimer(int delay) {
+			super(delay);
+		}
+
+		@Override 
         public boolean conditions()
         {
             // We have to take variables out of the creation of this object in order to use them in our code
@@ -121,7 +53,7 @@ public class HunterEvents implements Listener{
             return false;
         }
 
-        @Override
+		@Override
         public void run()
         {
             // We have to take variables out of the creation of this object in order to use them in our code
@@ -141,13 +73,134 @@ public class HunterEvents implements Listener{
                 } 
             }
         }
+	}
 
-        @Override 
-        public void delayMessage()
+    private EventTimer clockYeeter = new ClockYeeter(60 * 1000);
+    private final class ClockYeeter extends EventTimer
+    {
+        private Material sacraficeItem = Material.DIAMOND;
+        
+        private PlayerInteractEvent e;
+        private Player p;
+        
+        public ClockYeeter(int delay)
         {
-            //since the time delay returns a negative number we add
-            String message = String.format("Please wait %.1f seconds before using that again", (float) (getDelay() + timeDelay())/1000);
-            getPlayer().sendMessage(message);
+            super(delay);
         }
+
+        @Override
+        public boolean conditions() 
+        {
+            e = (PlayerInteractEvent) getEvent();
+            p = getPlayer();
+
+            if(e.getHand() == EquipmentSlot.HAND && (p.getInventory().getItemInMainHand().getType().equals(Material.CLOCK) || p.getInventory().getItemInOffHand().getType().equals(Material.CLOCK)))
+            {
+                if(e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
+                {
+                    if(compassTarget.distanceToNearestPlayer(p) < 100)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void run() 
+        {
+            boolean sacraficedItem = false;
+            for(int i = 0; i < p.getInventory().getSize(); i++)
+            {
+                ItemStack item = p.getInventory().getItem(i);
+                if(item != null && item.getType().equals(sacraficeItem))
+                {
+                    int amount = item.getAmount() - 1;
+                    item.setAmount(amount);
+                    p.getInventory().setItem(i, amount > 0 ? item : null);
+                    p.updateInventory();
+                    sacraficedItem = true;
+                    break;
+                } 
+            }
+            
+            if(!sacraficedItem)
+            {
+                p.sendMessage(ChatColor.DARK_AQUA + "You don't have any diamonds you broke ass bitch");
+                return;
+            }           
+
+            for(int i = 0; i < p.getInventory().getSize(); i++)
+            {
+                ItemStack item = p.getInventory().getItem(i);
+                if(item != null && item.getType().equals(Material.CLOCK))
+                {
+                    int amount = item.getAmount() - 1;
+                    item.setAmount(amount);
+                    p.getInventory().setItem(i, amount > 0 ? item : null);
+                    p.updateInventory();
+                    break;
+                } 
+            }
+            
+            Player target = compassTarget.locateNearestPlayer(p);
+            Vector targetVeloctiy = target.getVelocity();
+            
+            target.sendTitle("YEET IN 2 SECONDS","",0,20,10);
+            target.playSound(target.getLocation(), Sound.BLOCK_PUMPKIN_CARVE , SoundCategory.MASTER, 1, 1);
+
+            Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, new Runnable()
+            {
+                @Override
+                public void run() {
+                    targetVeloctiy.add(yeetVector(5));
+                    target.setVelocity(targetVeloctiy);                    
+                }    
+            }, 40);
+
+
+
+            p.sendTitle("", "YEET", 10, 40, 20);
+        }
+
+        private Vector yeetVector(double distance)
+        {
+            Random random = new Random();
+            Double x, y, z;
+            double theata, phi;
+
+            theata = random.nextDouble()*2*Math.PI;
+            phi = random.nextDouble()*2*Math.PI;
+
+            x = distance * Math.cos(theata) * Math.cos(phi);
+            y = Math.abs(distance * Math.sin(phi));            
+            z = distance * Math.cos(theata) * Math.sin(phi);
+            return new Vector(x, y, z);
+        }
+
     };
+
+    private Plugin plugin; 
+	private CompassTarget compassTarget;
+
+    public HunterEvents(CompassTarget compassTarget,Plugin plugin)
+    {
+        this.compassTarget = compassTarget;
+        this.plugin = plugin; 
+    }
+    // When a player leaves update the compass
+    @EventHandler
+    public void playerQuitEvent(PlayerQuitEvent e)
+    {
+        compassTarget.updatePlayers();
+    }
+    
+    @EventHandler
+    public void playerInteractEvent(PlayerInteractEvent e)
+    {  
+        compassTimer.handleEvent(e);
+        clockYeeter.handleEvent(e);
+    }
+    
 }

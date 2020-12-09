@@ -18,10 +18,7 @@ public class CompassTarget{
     
     public void updatePlayerCompass()
     {
-        for (Player p : players)
-        {
-            updatePlayerCompass(p);
-        }
+        players.forEach((p) -> updatePlayerCompass(p));
     }
 
     public void updatePlayerCompass(Player p)
@@ -39,12 +36,14 @@ public class CompassTarget{
     {
         double shortestDistance = -1;
         Location sourcePlayer = source.getLocation();
-        Player closestPlayer = null;
+        // sets closest player to the source as it starts
+        Player closestPlayer = source;
         for(Player p : players)
         {
-            if(p.getGameMode().equals(GameMode.SURVIVAL))
+            //we onyl grab survival so those specating arent calculated
+            if(p.getGameMode().equals(GameMode.SURVIVAL) || p.getGameMode().equals(GameMode.ADVENTURE))
             {
-                if(!p.equals(source) && players.size()>1)
+                if(!p.equals(source) && players.size() > 1)
                 {
 
                     if(shortestDistance == -1)
@@ -52,7 +51,7 @@ public class CompassTarget{
                         shortestDistance = sourcePlayer.distanceSquared(p.getLocation());
                         closestPlayer = p;
                     }
-                    else if(sourcePlayer.distanceSquared(p.getLocation())<shortestDistance)
+                    else if(sourcePlayer.distanceSquared(p.getLocation()) < shortestDistance)
                     {
                         shortestDistance = sourcePlayer.distanceSquared(p.getLocation());
                         closestPlayer = p;
@@ -63,12 +62,16 @@ public class CompassTarget{
         return closestPlayer;
     }
 
-    public double distanceToPlayer(Player source,Player target)
+    public double distanceToPlayer(Player source, Player target)
     {
         return source.getLocation().distance(target.getLocation());
     } 
     
-    
+    public double distanceToNearestPlayer(Player source)
+    {
+        return distanceToPlayer(source, locateNearestPlayer(source));
+    }
+
     public void setPlayers(Collection<? extends Player> players) {
         this.players = new ArrayList<Player>(players);
     }

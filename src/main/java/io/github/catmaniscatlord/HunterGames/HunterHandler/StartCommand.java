@@ -1,4 +1,6 @@
-package io.github.catmaniscatlord.HunterGames;
+package io.github.catmaniscatlord.HunterGames.HunterHandler;
+
+import io.github.catmaniscatlord.HunterGames.*;
 
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -21,16 +23,16 @@ public class StartCommand implements CommandExecutor{
     private World world;
     private CompassTarget compassTarget;
     private double worldBorderSize;
-    private HunterEvents hunterEvents;
+    private GameEvents gameEvents;
     private BukkitTask countdown;
     
-    public StartCommand(JavaPlugin plugin, CompassTarget compassTarget,HunterEvents hunterEvents)
+    public StartCommand(JavaPlugin plugin, CompassTarget compassTarget,GameEvents gameEvents)
     {
         this.plugin = plugin;
         this.world = Bukkit.getWorld("world");
         this.worldBorderSize = this.world.getWorldBorder().getSize();
         this.compassTarget = compassTarget;
-        this.hunterEvents = hunterEvents;
+        this.gameEvents = gameEvents;
     }
 
     @Override
@@ -43,7 +45,7 @@ public class StartCommand implements CommandExecutor{
             {
                 if(p.getGameMode() == GameMode.ADVENTURE)
                 {
-                    worldBorderSize += 250; 
+                    worldBorderSize += 350; 
                 }
             }
             // This will pregenerate the amount of chunks needed using the fcp plugin
@@ -87,7 +89,8 @@ public class StartCommand implements CommandExecutor{
         return true;
     }
 
-    private void Countdown(){
+    private void Countdown()
+    {
         countdown = Bukkit.getScheduler().runTaskTimer(plugin,new Runnable()
         {
             int i = 10;
@@ -116,7 +119,7 @@ public class StartCommand implements CommandExecutor{
 
         world.setGameRule(GameRule.DO_DAYLIGHT_CYCLE, true);
         Bukkit.getScheduler().cancelTask(countdown.getTaskId());
-        hunterEvents.setCanTakeDamage(true);
+        gameEvents.setCanTakeDamage(true);
         //set the world border to 200 * num of players after the countdown finishes 
         world.getWorldBorder().setSize(worldBorderSize);
         Bukkit.getOnlinePlayers().forEach((p) -> p.setGameMode(GameMode.SURVIVAL));
